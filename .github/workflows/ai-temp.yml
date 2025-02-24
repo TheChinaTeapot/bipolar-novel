@@ -1,0 +1,34 @@
+﻿name: 智能联合创作
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'bipolar-novel.txt'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 获取内容
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AI_HELPER }}
+          fetch-depth: 0
+
+      - name: 调用AI服务
+        run: |
+          # 真实AI调用示例（使用HuggingFace）
+          CONTENT=$(cat bipolar-novel.txt)
+          RESPONSE=$(curl -s https://api-inference.huggingface.co/models/EleutherAI/gpt-neo-2.7B \
+            -H "Authorization: Bearer ${{ secrets.HF_TOKEN }}" \
+            -d '{"inputs":"'"$CONTENT"'","parameters":{"max_length":100}}' | jq -r .[0].generated_text)
+          
+          echo -e "\n【AI创作响应】\n$RESPONSE" >> bipolar-novel.txt
+
+      - name: 智能提交
+        run: |
+          git config user.name "AI创作伙伴"
+          git config user.email "ai-coauthor@noreply"
+          git add .
+          git commit -m "[AI] 自动生成内容 @ $(date +'%H:%M:%S')"
+          git push
